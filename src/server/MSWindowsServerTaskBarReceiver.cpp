@@ -290,12 +290,22 @@ MSWindowsServerTaskBarReceiver::onStatusChanged()
 HICON
 MSWindowsServerTaskBarReceiver::loadIcon(UINT id)
 {
-    HANDLE icon = LoadImage(m_appInstance,
-                            MAKEINTRESOURCE(id),
-                            IMAGE_ICON,
-                            0, 0,
-                            LR_DEFAULTCOLOR);
-    return static_cast<HICON>(icon);
+    HINSTANCE hInst = m_appInstance ? m_appInstance : GetModuleHandle(nullptr);
+    HICON icon = (HICON)LoadImage(hInst,
+                                  MAKEINTRESOURCE(id),
+                                  IMAGE_ICON,
+                                  GetSystemMetrics(SM_CXSMICON),
+                                  GetSystemMetrics(SM_CYSMICON),
+                                  LR_DEFAULTCOLOR);
+    if (!icon) {
+        icon = (HICON)LoadImage(hInst,
+                                MAKEINTRESOURCE(IDI_INPUTLEAP),
+                                IMAGE_ICON,
+                                GetSystemMetrics(SM_CXSMICON),
+                                GetSystemMetrics(SM_CYSMICON),
+                                LR_DEFAULTCOLOR);
+    }
+    return icon;
 }
 
 void

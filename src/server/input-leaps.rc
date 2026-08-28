@@ -90,9 +90,11 @@ END
 // Icon
 //
 
-// Icon with lowest ID value placed first to ensure application icon
-// remains consistent on all systems.
 IDI_INPUTLEAP             ICON                    "../../res/input-leap.ico"
+IDI_TASKBAR_NOT_RUNNING   ICON                    "../../res/input-leap.ico"
+IDI_TASKBAR_NOT_WORKING   ICON                    "../../res/input-leap.ico"
+IDI_TASKBAR_NOT_CONNECTED ICON                    "../../res/input-leap.ico"
+IDI_TASKBAR_CONNECTED     ICON                    "../../res/input-leap.ico"
 
 
 /////////////////////////////////////////////////////////////////////////////
