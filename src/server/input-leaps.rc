@@ -104,6 +104,8 @@ IDR_TASKBAR MENU
 BEGIN
     POPUP "InputLeap"
     BEGIN
+        MENUITEM "Settings...",                 IDC_TASKBAR_SETTINGS
+        MENUITEM SEPARATOR
         MENUITEM "Show Status",                 IDC_TASKBAR_STATUS
         MENUITEM "Show Log",                    IDC_TASKBAR_SHOW_LOG
         MENUITEM "Copy Log To Clipboard",       IDC_TASKBAR_LOG
@@ -137,6 +139,37 @@ FONT 8, "MS Sans Serif"
 BEGIN
     EDITTEXT        IDC_TASKBAR_STATUS_STATUS,3,3,139,12,ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER
     LISTBOX         IDC_TASKBAR_STATUS_CLIENTS,3,17,139,40,NOT LBS_NOTIFY | LBS_SORT | LBS_NOINTEGRALHEIGHT | LBS_NOSEL | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_SETTINGS_DIALOG DIALOGEX 0, 0, 240, 222
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Input Leap - Configuracoes do Servidor"
+FONT 9, "Segoe UI", 400, 0, 0x1
+BEGIN
+    GROUPBOX        "Computadores (Telas)",-1,7,5,226,58
+    LTEXT           "Nome do Servidor:",-1,14,18,75,8
+    EDITTEXT        IDC_EDT_SERVER_NAME,92,16,133,12,ES_AUTOHSCROLL
+    LTEXT           "Nome do Cliente:",-1,14,32,75,8
+    EDITTEXT        IDC_EDT_CLIENT_NAME,92,30,133,12,ES_AUTOHSCROLL
+    LTEXT           "Posicao do Cliente:",-1,14,46,75,8
+    COMBOBOX        IDC_CMB_POSITION,92,44,133,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+
+    GROUPBOX        "Rede & Escuta",-1,7,66,226,32
+    LTEXT           "Endereco:",-1,14,79,40,8
+    EDITTEXT        IDC_EDT_LISTEN_ADDR,56,77,80,12,ES_AUTOHSCROLL
+    LTEXT           "Porta:",-1,146,79,25,8
+    EDITTEXT        IDC_EDT_PORT,173,77,52,12,ES_AUTOHSCROLL | ES_NUMBER
+
+    GROUPBOX        "Seguranca (TLS)",-1,7,101,226,34
+    AUTOCHECKBOX    "Habilitar Criptografia TLS",IDC_CHK_TLS,14,111,210,10
+    AUTOCHECKBOX    "Desativar verificacao de certificados de cliente",IDC_CHK_DISABLE_CLIENT_CERT,14,122,210,10
+
+    GROUPBOX        "Opcoes",-1,7,138,226,34
+    AUTOCHECKBOX    "Iniciar com o Windows (Silencioso no Tray)",IDC_CHK_AUTOSTART,14,148,210,10
+    AUTOCHECKBOX    "Compartilhar Area de Transferencia",IDC_CHK_CLIPBOARD,14,159,210,10
+
+    DEFPUSHBUTTON   "Salvar e Aplicar",IDC_BTN_SAVE_APPLY,68,180,80,14
+    PUSHBUTTON      "Cancelar",IDC_BTN_CANCEL,153,180,80,14
 END
 
 

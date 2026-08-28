@@ -17,6 +17,7 @@
  */
 
 #include "MSWindowsServerTaskBarReceiver.h"
+#include "MSWindowsSettingsDialog.h"
 
 #include "resource.h"
 #include "server/Server.h"
@@ -177,8 +178,17 @@ MSWindowsServerTaskBarReceiver::runMenu(int x, int y)
                            x, y, 0, m_window, nullptr);
     SendMessage(m_window, WM_NULL, 0, 0);
 
-    // perform the requested operation
-    switch (n) {
+    onCommand(n);
+}
+
+void
+MSWindowsServerTaskBarReceiver::onCommand(UINT id)
+{
+    switch (id) {
+    case IDC_TASKBAR_SETTINGS:
+        MSWindowsSettingsDialog::show(m_window, m_events);
+        break;
+
     case IDC_TASKBAR_STATUS:
         showStatus();
         break;
@@ -239,7 +249,7 @@ MSWindowsServerTaskBarReceiver::runMenu(int x, int y)
 void
 MSWindowsServerTaskBarReceiver::primaryAction()
 {
-    showStatus();
+    MSWindowsSettingsDialog::show(m_window, m_events);
 }
 
 IArchTaskBarReceiver::Icon MSWindowsServerTaskBarReceiver::getIcon() const

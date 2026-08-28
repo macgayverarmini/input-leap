@@ -39,6 +39,7 @@ public:
 
 protected:
     void copyLog() const;
+    void onCommand(UINT id);
 
     // ServerTaskBarReceiver overrides
     virtual void onStatusChanged();
@@ -65,5 +66,7 @@ private:
 
     static const UINT    s_stateToIconID[];
 };
+
+IArchTaskBarReceiver* createTaskBarReceiver(const BufferedLogOutputter* logBuffer, IEventQueue* events);
 
 } // namespace inputleap

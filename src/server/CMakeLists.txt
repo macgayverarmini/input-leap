@@ -47,9 +47,15 @@ if(INPUTLEAP_ADD_HEADERS)
     list(APPEND sources ${headers})
 endif()
 
-add_executable(input-leaps ${sources})
-target_link_libraries(input-leaps
-    arch base client common io mt net ipc platform server synlib ${libs} OpenSSL::SSL OpenSSL::Crypto)
+if (BUILD_MSWINDOWS)
+    add_executable(input-leaps WIN32 ${sources})
+    target_link_libraries(input-leaps
+        arch base client common io mt net ipc platform server synlib ${libs} OpenSSL::SSL OpenSSL::Crypto dwmapi comctl32)
+else()
+    add_executable(input-leaps ${sources})
+    target_link_libraries(input-leaps
+        arch base client common io mt net ipc platform server synlib ${libs} OpenSSL::SSL OpenSSL::Crypto)
+endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     install(TARGETS input-leaps DESTINATION ${INPUTLEAP_BUNDLE_BINARY_DIR})
