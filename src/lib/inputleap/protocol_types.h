@@ -46,10 +46,10 @@ static const std::uint32_t kMaxHelloLength = 1024;
 // time between kMsgCKeepAlive (in seconds).  a non-positive value disables
 // keep alives.  this is the default rate that can be overridden using an
 // option.
-static const double        kKeepAliveRate = 3.0;
+static const double        kKeepAliveRate = 1.0;
 
 // number of skipped kMsgCKeepAlive messages that indicates a problem
-static const double        kKeepAlivesUntilDeath = 3.0;
+static const double        kKeepAlivesUntilDeath = 2.0;
 
 // obsolete heartbeat stuff
 static const double        kHeartRate = -1.0;

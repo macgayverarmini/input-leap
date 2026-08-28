@@ -1557,22 +1557,32 @@ Server::onKeyDown(KeyID id, KeyModifierMask mask, KeyButton button,
 	LOG_DEBUG1("onKeyDown id=%d mask=0x%04x button=0x%04x", id, mask, button);
 	assert(m_active != nullptr);
 
-	// relay
-	if (!m_keyboardBroadcasting && IKeyState::KeyInfo::isDefault(screens)) {
-		m_active->keyDown(id, mask, button);
+	try {
+		// relay
+		if (!m_keyboardBroadcasting && IKeyState::KeyInfo::isDefault(screens)) {
+			m_active->keyDown(id, mask, button);
+		}
+		else {
+			if (!screens && m_keyboardBroadcasting) {
+				screens = m_keyboardBroadcastingScreens.c_str();
+				if (IKeyState::KeyInfo::isDefault(screens)) {
+					screens = "*";
+				}
+			}
+			for (auto index = m_clients.begin(); index != m_clients.end(); ++index) {
+				if (IKeyState::KeyInfo::contains(screens, index->first)) {
+					index->second->keyDown(id, mask, button);
+				}
+			}
+		}
 	}
-	else {
-		if (!screens && m_keyboardBroadcasting) {
-			screens = m_keyboardBroadcastingScreens.c_str();
-			if (IKeyState::KeyInfo::isDefault(screens)) {
-				screens = "*";
-			}
-		}
-        for (auto index = m_clients.begin(); index != m_clients.end(); ++index) {
-			if (IKeyState::KeyInfo::contains(screens, index->first)) {
-				index->second->keyDown(id, mask, button);
-			}
-		}
+	catch (const std::exception& e) {
+		LOG_WARN("error sending keyDown to \"%s\": %s. Returning to primary screen.", getName(m_active).c_str(), e.what());
+		forceLeaveClient(m_active);
+	}
+	catch (...) {
+		LOG_WARN("unknown error sending keyDown to \"%s\". Returning to primary screen.", getName(m_active).c_str());
+		forceLeaveClient(m_active);
 	}
 }
 
@@ -1583,22 +1593,32 @@ Server::onKeyUp(KeyID id, KeyModifierMask mask, KeyButton button,
 	LOG_DEBUG1("onKeyUp id=%d mask=0x%04x button=0x%04x", id, mask, button);
 	assert(m_active != nullptr);
 
-	// relay
-	if (!m_keyboardBroadcasting && IKeyState::KeyInfo::isDefault(screens)) {
-		m_active->keyUp(id, mask, button);
+	try {
+		// relay
+		if (!m_keyboardBroadcasting && IKeyState::KeyInfo::isDefault(screens)) {
+			m_active->keyUp(id, mask, button);
+		}
+		else {
+			if (!screens && m_keyboardBroadcasting) {
+				screens = m_keyboardBroadcastingScreens.c_str();
+				if (IKeyState::KeyInfo::isDefault(screens)) {
+					screens = "*";
+				}
+			}
+			for (auto index = m_clients.begin(); index != m_clients.end(); ++index) {
+				if (IKeyState::KeyInfo::contains(screens, index->first)) {
+					index->second->keyUp(id, mask, button);
+				}
+			}
+		}
 	}
-	else {
-		if (!screens && m_keyboardBroadcasting) {
-			screens = m_keyboardBroadcastingScreens.c_str();
-			if (IKeyState::KeyInfo::isDefault(screens)) {
-				screens = "*";
-			}
-		}
-        for (auto index = m_clients.begin(); index != m_clients.end(); ++index) {
-			if (IKeyState::KeyInfo::contains(screens, index->first)) {
-				index->second->keyUp(id, mask, button);
-			}
-		}
+	catch (const std::exception& e) {
+		LOG_WARN("error sending keyUp to \"%s\": %s. Returning to primary screen.", getName(m_active).c_str(), e.what());
+		forceLeaveClient(m_active);
+	}
+	catch (...) {
+		LOG_WARN("unknown error sending keyUp to \"%s\". Returning to primary screen.", getName(m_active).c_str());
+		forceLeaveClient(m_active);
 	}
 }
 
@@ -1607,8 +1627,18 @@ void Server::onKeyRepeat(KeyID id, KeyModifierMask mask, std::int32_t count, Key
 	LOG_DEBUG1("onKeyRepeat id=%d mask=0x%04x count=%d button=0x%04x", id, mask, count, button);
 	assert(m_active != nullptr);
 
-	// relay
-	m_active->keyRepeat(id, mask, count, button);
+	try {
+		// relay
+		m_active->keyRepeat(id, mask, count, button);
+	}
+	catch (const std::exception& e) {
+		LOG_WARN("error sending keyRepeat to \"%s\": %s. Returning to primary screen.", getName(m_active).c_str(), e.what());
+		forceLeaveClient(m_active);
+	}
+	catch (...) {
+		LOG_WARN("unknown error sending keyRepeat to \"%s\". Returning to primary screen.", getName(m_active).c_str());
+		forceLeaveClient(m_active);
+	}
 }
 
 void
@@ -1617,8 +1647,18 @@ Server::onMouseDown(ButtonID id)
 	LOG_DEBUG1("onMouseDown id=%d", id);
 	assert(m_active != nullptr);
 
-	// relay
-	m_active->mouseDown(id);
+	try {
+		// relay
+		m_active->mouseDown(id);
+	}
+	catch (const std::exception& e) {
+		LOG_WARN("error sending mouseDown to \"%s\": %s. Returning to primary screen.", getName(m_active).c_str(), e.what());
+		forceLeaveClient(m_active);
+	}
+	catch (...) {
+		LOG_WARN("unknown error sending mouseDown to \"%s\". Returning to primary screen.", getName(m_active).c_str());
+		forceLeaveClient(m_active);
+	}
 
 	// reset this variable back to default value true
 	m_waitDragInfoThread = true;
@@ -1630,8 +1670,18 @@ Server::onMouseUp(ButtonID id)
 	LOG_DEBUG1("onMouseUp id=%d", id);
 	assert(m_active != nullptr);
 
-	// relay
-	m_active->mouseUp(id);
+	try {
+		// relay
+		m_active->mouseUp(id);
+	}
+	catch (const std::exception& e) {
+		LOG_WARN("error sending mouseUp to \"%s\": %s. Returning to primary screen.", getName(m_active).c_str(), e.what());
+		forceLeaveClient(m_active);
+	}
+	catch (...) {
+		LOG_WARN("unknown error sending mouseUp to \"%s\". Returning to primary screen.", getName(m_active).c_str());
+		forceLeaveClient(m_active);
+	}
 
 	if (m_ignoreFileTransfer) {
 		m_ignoreFileTransfer = false;
@@ -1822,7 +1872,17 @@ void Server::onMouseMoveSecondary(std::int32_t dx, std::int32_t dy)
 	// have no idea where it really is.
 	if (m_relativeMoves && isLockedToScreenServer()) {
 		LOG_DEBUG2("relative move on %s by %d,%d", getName(m_active).c_str(), dx, dy);
-		m_active->mouseRelativeMove(dx, dy);
+		try {
+			m_active->mouseRelativeMove(dx, dy);
+		}
+		catch (const std::exception& e) {
+			LOG_WARN("error sending relative mouse move to \"%s\": %s. Returning to primary screen.", getName(m_active).c_str(), e.what());
+			forceLeaveClient(m_active);
+		}
+		catch (...) {
+			LOG_WARN("unknown error sending relative mouse move to \"%s\". Returning to primary screen.", getName(m_active).c_str());
+			forceLeaveClient(m_active);
+		}
 		return;
 	}
 
@@ -1966,7 +2026,17 @@ void Server::onMouseMoveSecondary(std::int32_t dx, std::int32_t dy)
 		// warp cursor if it moved.
 		if (m_x != xOld || m_y != yOld) {
 			LOG_DEBUG2("move on %s to %d,%d", getName(m_active).c_str(), m_x, m_y);
-			m_active->mouseMove(m_x, m_y);
+			try {
+				m_active->mouseMove(m_x, m_y);
+			}
+			catch (const std::exception& e) {
+				LOG_WARN("error sending mouseMove to \"%s\": %s. Returning to primary screen.", getName(m_active).c_str(), e.what());
+				forceLeaveClient(m_active);
+			}
+			catch (...) {
+				LOG_WARN("unknown error sending mouseMove to \"%s\". Returning to primary screen.", getName(m_active).c_str());
+				forceLeaveClient(m_active);
+			}
 		}
 	}
 }
@@ -1977,7 +2047,17 @@ void Server::onMouseWheel(std::int32_t xDelta, std::int32_t yDelta)
 	assert(m_active != nullptr);
 
 	// relay
-	m_active->mouseWheel(xDelta, yDelta);
+	try {
+		m_active->mouseWheel(xDelta, yDelta);
+	}
+	catch (const std::exception& e) {
+		LOG_WARN("error sending mouseWheel to \"%s\": %s. Returning to primary screen.", getName(m_active).c_str(), e.what());
+		forceLeaveClient(m_active);
+	}
+	catch (...) {
+		LOG_WARN("unknown error sending mouseWheel to \"%s\". Returning to primary screen.", getName(m_active).c_str());
+		forceLeaveClient(m_active);
+	}
 }
 
 void Server::on_file_chunk_sending(const FileChunk& chunk)
