@@ -796,10 +796,40 @@ ServerApp::mainLoop()
 
 void ServerApp::reset_server()
 {
-    LOG_DEBUG1("resetting server");
+    LOG_NOTE("resetting server and applying configuration...");
     stopServer();
     cleanupServer();
-    startServer();
+
+#if SYSAPI_WIN32
+    // Read updated INI settings
+    char exePath[MAX_PATH];
+    GetModuleFileNameA(nullptr, exePath, MAX_PATH);
+    std::string dir(exePath);
+    size_t p = dir.find_last_of("\\/");
+    std::string ini = (p != std::string::npos) ? dir.substr(0, p + 1) + "settings.ini" : "settings.ini";
+
+    char buf[256];
+    if (GetPrivateProfileStringA("Server", "ServerName", "", buf, sizeof(buf), ini.c_str()) > 0) {
+        argsBase().m_name = buf;
+    }
+    char addr[256];
+    GetPrivateProfileStringA("Server", "ListenAddress", "0.0.0.0", addr, sizeof(addr), ini.c_str());
+    int port = GetPrivateProfileIntA("Server", "Port", 24800, ini.c_str());
+    args().network_address = std::string(addr) + ":" + std::to_string(port);
+    try {
+        *listen_address_ = NetworkAddress(args().network_address, kDefaultPort);
+        listen_address_->resolve();
+    }
+    catch (...) {
+    }
+    argsBase().m_enableCrypto = (GetPrivateProfileIntA("Server", "EnableTLS", 1, ini.c_str()) != 0);
+    args().check_client_certificates = (GetPrivateProfileIntA("Server", "DisableClientCertCheck", 1, ini.c_str()) == 0);
+#endif
+
+    loadConfig();
+    if (initServer()) {
+        startServer();
+    }
 }
 
 int
