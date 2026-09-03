@@ -125,6 +125,18 @@ void ClientListener::handle_client_connecting()
         handle_client_accepted(socket_ptr);
     });
 
+    m_events->add_handler(EventType::SOCKET_DISCONNECTED, socket_ptr->get_event_target(),
+                          [this, socket_ptr](const auto& e)
+    {
+        handle_client_failed(socket_ptr);
+    });
+
+    m_events->add_handler(EventType::DATA_SOCKET_CONNECTION_FAILED, socket_ptr->get_event_target(),
+                          [this, socket_ptr](const auto& e)
+    {
+        handle_client_failed(socket_ptr);
+    });
+
     // When using non SSL, server accepts clients immediately, while SSL
     // has to call secure accept which may require retry
     if (security_level_ == ConnectionSecurityLevel::PLAINTEXT) {
@@ -135,6 +147,10 @@ void ClientListener::handle_client_connecting()
 void ClientListener::handle_client_accepted(IDataSocket* socket_ptr)
 {
     LOG_NOTE("accepted client connection");
+    m_events->remove_handler(EventType::CLIENT_LISTENER_ACCEPTED, socket_ptr->get_event_target());
+    m_events->remove_handler(EventType::SOCKET_DISCONNECTED, socket_ptr->get_event_target());
+    m_events->remove_handler(EventType::DATA_SOCKET_CONNECTION_FAILED, socket_ptr->get_event_target());
+
     auto socket = client_sockets_.erase(socket_ptr);
     if (!socket) {
         throw std::runtime_error("Got more than one CLIENT_LISTENER_ACCEPTED event");
@@ -155,6 +171,19 @@ void ClientListener::handle_client_accepted(IDataSocket* socket_ptr)
                           [this, client](const auto& e){ handle_unknown_client(client); });
     m_events->add_handler(EventType::CLIENT_PROXY_UNKNOWN_FAILURE, client,
                           [this, client](const auto& e){ handle_unknown_client(client); });
+}
+
+void ClientListener::handle_client_failed(IDataSocket* socket_ptr)
+{
+    LOG_DEBUG("client socket disconnected or failed during handshake, cleaning up");
+    m_events->remove_handler(EventType::CLIENT_LISTENER_ACCEPTED, socket_ptr->get_event_target());
+    m_events->remove_handler(EventType::SOCKET_DISCONNECTED, socket_ptr->get_event_target());
+    m_events->remove_handler(EventType::DATA_SOCKET_CONNECTION_FAILED, socket_ptr->get_event_target());
+
+    auto socket = client_sockets_.erase(socket_ptr);
+    if (socket) {
+        socket->close();
+    }
 }
 
 void ClientListener::handle_unknown_client(ClientProxyUnknown* unknownClient)
@@ -213,6 +242,14 @@ ClientListener::cleanupListenSocket()
 void
 ClientListener::cleanupClientSockets()
 {
+    for (auto it = client_sockets_.begin(); it != client_sockets_.end(); ++it) {
+        if (*it) {
+            m_events->remove_handler(EventType::CLIENT_LISTENER_ACCEPTED, (*it)->get_event_target());
+            m_events->remove_handler(EventType::SOCKET_DISCONNECTED, (*it)->get_event_target());
+            m_events->remove_handler(EventType::DATA_SOCKET_CONNECTION_FAILED, (*it)->get_event_target());
+            (*it)->close();
+        }
+    }
     client_sockets_.clear();
 }
 

@@ -311,20 +311,6 @@ ServerApp::closeServer(Server* server)
 
     // tell all clients to disconnect
     server->disconnect();
-
-    // wait for clients to disconnect for up to timeout seconds
-    double timeout = 3.0;
-    EventQueueTimer* timer = m_events->newOneShotTimer(timeout, nullptr);
-    m_events->add_handler(EventType::TIMER, timer,
-                          [this](const auto& e){ handle_clients_disconnected(e); });
-    m_events->add_handler(EventType::SERVER_DISCONNECTED, server,
-                          [this](const auto& e){ handle_clients_disconnected(e); });
-
-    m_events->loop();
-
-    m_events->remove_handler(EventType::TIMER, timer);
-    m_events->deleteTimer(timer);
-    m_events->remove_handler(EventType::SERVER_DISCONNECTED, server);
 }
 
 void

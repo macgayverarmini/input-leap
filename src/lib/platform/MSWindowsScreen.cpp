@@ -210,8 +210,8 @@ MSWindowsScreen::enable()
     m_events->add_handler(EventType::TIMER, m_fixTimer,
                           [this](const auto& e){ handle_fixes(); });
 
-    // install our clipboard snooper
-    m_nextClipboardWindow = SetClipboardViewer(m_window);
+    // install our clipboard snooper (modern non-blocking Windows API)
+    AddClipboardFormatListener(m_window);
 
     // track the active desk and (re)install the hooks
     m_desks->enable();
@@ -254,7 +254,7 @@ MSWindowsScreen::disable()
     m_keyState->disable();
 
     // stop snooping the clipboard
-    ChangeClipboardChain(m_window, m_nextClipboardWindow);
+    RemoveClipboardFormatListener(m_window);
     m_nextClipboardWindow = nullptr;
 
     // uninstall fix timer
@@ -1009,24 +1009,8 @@ MSWindowsScreen::onEvent(HWND, UINT msg,
                 WPARAM wParam, LPARAM lParam, LRESULT* result)
 {
     switch (msg) {
-    case WM_DRAWCLIPBOARD:
-        // first pass on the message
-        if (m_nextClipboardWindow != nullptr) {
-            SendMessage(m_nextClipboardWindow, msg, wParam, lParam);
-        }
-
-        // now handle the message
+    case WM_CLIPBOARDUPDATE:
         return onClipboardChange();
-
-    case WM_CHANGECBCHAIN:
-        if (m_nextClipboardWindow == (HWND)wParam) {
-            m_nextClipboardWindow = (HWND)lParam;
-            LOG_DEBUG("clipboard chain: new next: 0x%08x", m_nextClipboardWindow);
-        }
-        else if (m_nextClipboardWindow != nullptr) {
-            SendMessage(m_nextClipboardWindow, msg, wParam, lParam);
-        }
-        return true;
 
     case WM_DISPLAYCHANGE:
         return onDisplayChange();

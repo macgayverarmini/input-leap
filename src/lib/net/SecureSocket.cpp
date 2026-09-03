@@ -763,6 +763,8 @@ MultiplexerJobStatus SecureSocket::serviceAccept(ISocketMultiplexerJob* job,
 #endif
         // If status < 0, error happened
     if (status < 0) {
+        sendEvent(EventType::SOCKET_DISCONNECTED);
+        close();
         return {false, {}};
     }
 
