@@ -111,6 +111,9 @@ MSWindowsScreen::MSWindowsScreen(
     m_window(nullptr),
     m_nextClipboardWindow(nullptr),
     m_ownClipboard(false),
+    m_clipboardMonitoringEnabled(false),
+    m_clipboardListenerInstalled(false),
+    m_enabled(false),
     m_desks(nullptr),
     m_keyState(nullptr),
     m_hasMouse(GetSystemMetrics(SM_MOUSEPRESENT) != 0),
@@ -210,8 +213,8 @@ MSWindowsScreen::enable()
     m_events->add_handler(EventType::TIMER, m_fixTimer,
                           [this](const auto& e){ handle_fixes(); });
 
-    // install our clipboard snooper (modern non-blocking Windows API)
-    AddClipboardFormatListener(m_window);
+    m_enabled = true;
+    updateClipboardListener();
 
     // track the active desk and (re)install the hooks
     m_desks->enable();
@@ -253,8 +256,8 @@ MSWindowsScreen::disable()
     // tell key state
     m_keyState->disable();
 
-    // stop snooping the clipboard
-    RemoveClipboardFormatListener(m_window);
+    m_enabled = false;
+    updateClipboardListener();
     m_nextClipboardWindow = nullptr;
 
     // uninstall fix timer
@@ -403,17 +406,10 @@ MSWindowsScreen::setClipboard(ClipboardID, const IClipboard* src)
 void
 MSWindowsScreen::checkClipboards()
 {
-    // if we think we own the clipboard but we don't then somebody
-    // grabbed the clipboard on this screen without us knowing.
-    // tell the server that this screen grabbed the clipboard.
-    //
-    // this works around bugs in the clipboard viewer chain.
-    // sometimes NT will simply never send WM_DRAWCLIPBOARD
-    // messages for no apparent reason and rebooting fixes the
-    // problem.  since we don't want a broken clipboard until the
-    // next reboot we do this double check.  clipboard ownership
-    // won't be reflected on other screens until we leave but at
-    // least the clipboard itself will work.
+    if (!m_clipboardMonitoringEnabled) {
+        return;
+    }
+
     if (m_ownClipboard && !MSWindowsClipboard::is_owned_by_us()) {
         LOG_DEBUG("clipboard changed: lost ownership and no notification received");
         m_ownClipboard = false;
@@ -465,15 +461,40 @@ MSWindowsScreen::screensaver(bool activate)
 }
 
 void
+MSWindowsScreen::updateClipboardListener()
+{
+    if (m_clipboardListenerInstalled && (!m_clipboardMonitoringEnabled || !m_enabled)) {
+        RemoveClipboardFormatListener(m_window);
+        m_clipboardListenerInstalled = false;
+        LOG_DEBUG("clipboard format listener removed (clipboard sharing disabled)");
+    }
+    else if (!m_clipboardListenerInstalled && m_clipboardMonitoringEnabled && m_enabled) {
+        AddClipboardFormatListener(m_window);
+        m_clipboardListenerInstalled = true;
+        LOG_DEBUG("clipboard format listener installed (clipboard sharing enabled)");
+    }
+}
+
+void
 MSWindowsScreen::resetOptions()
 {
     m_desks->resetOptions();
+    m_clipboardMonitoringEnabled = false;
+    updateClipboardListener();
 }
 
 void
 MSWindowsScreen::setOptions(const OptionsList& options)
 {
     m_desks->setOptions(options);
+    for (std::uint32_t i = 0; i < options.size(); i += 2) {
+        OptionID id = options[i];
+        OptionValue value = options[i + 1];
+        if (id == kOptionClipboardSharing) {
+            m_clipboardMonitoringEnabled = (value != 0);
+        }
+    }
+    updateClipboardListener();
 }
 
 void MSWindowsScreen::setSequenceNumber(std::uint32_t seqNum)
@@ -1431,6 +1452,10 @@ MSWindowsScreen::onDisplayChange()
 bool
 MSWindowsScreen::onClipboardChange()
 {
+    if (!m_clipboardMonitoringEnabled) {
+        return true;
+    }
+
     // now notify client that somebody changed the clipboard (unless
     // we're the owner).
     if (!MSWindowsClipboard::is_owned_by_us()) {

@@ -295,6 +295,11 @@ private:
     HWND m_window;
     HWND m_nextClipboardWindow;
     bool m_ownClipboard;
+    bool m_clipboardMonitoringEnabled;
+    bool m_clipboardListenerInstalled;
+    bool m_enabled;
+
+    void updateClipboardListener();
 
     // one desk per desktop and a cond var to communicate with it
     MSWindowsDesks* m_desks;
